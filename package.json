@@ -1,5 +1,5 @@
 {
-  "name": "evm-contract-verification",
+  "name": "evm-txn-decoder",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
