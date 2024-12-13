@@ -26,7 +26,9 @@ export class ContractTxLogsDecoder {
 		if (!message) return;
 		try {
 			const data = JSON.parse(message.content.toString('utf-8'));
-			const decodingLogs = await this.decodeTransactions(data.contractAddress);
+			const decodingLogs = await this.decodeTransactions(
+				data.contractAddress,
+			);
 			console.log('Decoding all logs', decodingLogs);
 
 			rabbitmqService.ackMessage(message);
@@ -110,7 +112,7 @@ export class ContractTxLogsDecoder {
 						abiDecoder.addABI(JSON.parse(contractDetails.abi));
 						const decodedInput =
 							contractTx.input &&
-								contractTx.type !==
+							contractTx.type !==
 								TRANSACTION_TYPE.CONTRACT_CREATION
 								? abiDecoder.decodeMethod(contractTx.input)
 								: '';
@@ -118,10 +120,10 @@ export class ContractTxLogsDecoder {
 						try {
 							decodedLogs = contractTx.ContractLogs[0]
 								? abiDecoder.decodeLogs(
-									JSON.parse(
-										contractTx.ContractLogs[0].logs,
-									),
-								)
+										JSON.parse(
+											contractTx.ContractLogs[0].logs,
+										),
+									)
 								: '';
 						} catch (err) {
 							console.log('Error in decodedTransactions');
@@ -131,8 +133,11 @@ export class ContractTxLogsDecoder {
 									abiDecoder.addABI(abi);
 									decodedLogs = contractTx.ContractLogs[0]
 										? abiDecoder.decodeLogs(
-											JSON.parse(contractTx.ContractLogs[0].logs),
-										)
+												JSON.parse(
+													contractTx.ContractLogs[0]
+														.logs,
+												),
+											)
 										: '';
 								}
 							}
@@ -146,7 +151,7 @@ export class ContractTxLogsDecoder {
 					});
 					await dbService.prisma.decodedLogs.createMany({
 						data: contractTxDecoded,
-						skipDuplicates: true
+						skipDuplicates: true,
 					});
 				}
 			}
@@ -187,7 +192,7 @@ export class ContractTxLogsDecoder {
 
 			const decodedInput =
 				contractTxRecord.input &&
-					contractTxRecord.type !== TRANSACTION_TYPE.CONTRACT_CREATION
+				contractTxRecord.type !== TRANSACTION_TYPE.CONTRACT_CREATION
 					? abiDecoder.decodeMethod(contractTxRecord.input)
 					: '';
 
@@ -195,8 +200,8 @@ export class ContractTxLogsDecoder {
 			try {
 				decodedLogs = contractTxRecord.ContractLogs[0]
 					? abiDecoder.decodeLogs(
-						JSON.parse(contractTxRecord.ContractLogs[0].logs),
-					)
+							JSON.parse(contractTxRecord.ContractLogs[0].logs),
+						)
 					: '';
 			} catch (err) {
 				console.log('Error in decodedTransaction');
@@ -206,8 +211,10 @@ export class ContractTxLogsDecoder {
 						abiDecoder.addABI(abi);
 						decodedLogs = contractTxRecord.ContractLogs[0]
 							? abiDecoder.decodeLogs(
-								JSON.parse(contractTxRecord.ContractLogs[0].logs),
-							)
+									JSON.parse(
+										contractTxRecord.ContractLogs[0].logs,
+									),
+								)
 							: '';
 					}
 				}
@@ -219,7 +226,7 @@ export class ContractTxLogsDecoder {
 						input: JSON.stringify(decodedInput),
 						logs: JSON.stringify(decodedLogs),
 					},
-					skipDuplicates: true
+					skipDuplicates: true,
 				});
 			}
 			return new ReturnedResponse('', true);

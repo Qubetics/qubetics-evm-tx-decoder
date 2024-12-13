@@ -13,7 +13,7 @@
     "start:local": "npm run lint && NODE_ENV=local nodemon index.js",
     "start:test": "NODE_ENV=test node build/src/server.js",
     "start:stage": "NODE_ENV=staging node build/src/server.js",
-    "start:prod": "NODE_ENV=production ENV_INJECTED=1 node ./server.js",
+    "start:prod": "NODE_ENV=production ENV_INJECTED=1 node ./build/server.js",
     "lint": "eslint src/**/*.ts",
     "lint-fix": "eslint --fix src/**/*.ts",
     "pretty": "prettier --write \"src/**/*.ts\"",
