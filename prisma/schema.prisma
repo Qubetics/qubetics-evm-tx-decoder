@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl", "debian-openssl-1.1.x"]
 }
 
 datasource db {
@@ -34,7 +35,7 @@ model Blocks {
   stateRoot        String   @db.VarChar(255)
   parentHash       String   @db.VarChar(255)
   transactionsRoot String
-  timestamp        BigInt
+  timestamp        DateTime
   transactionCount BigInt   @default(0)
   nonce            BigInt
   miner            String   @db.VarChar(255)
@@ -49,6 +50,8 @@ model Blocks {
   createdAt        DateTime @default(now())
 
   @@index([blocknumber, blockhash])
+  @@index([createdAt])
+  @@index([miner]) 
 }
 
 model Transactions {
@@ -59,7 +62,7 @@ model Transactions {
   contractAddress String            @default("N/A")
   status          TransactionStatus @default(PENDING)
   type            TransactionType
-  timestamp       BigInt
+  timestamp       DateTime
   fromAddress     String            @db.VarChar(255)
   toAddress       String            @db.VarChar(255)
   gasPrice        BigInt            @default(0)
@@ -67,10 +70,9 @@ model Transactions {
   txFee           String            @default("0") @db.VarChar(255)
   value           String            @default("0")
   token           String            @default("0")
-  input           String         @default("") 
+  input           String?            @default("") 
   createdAt       DateTime          @default(now())
-
-  ContractLogs ContractLogs[]
+  ContractLogs    ContractLogs[]
 
   @@index([type, txhash, contractAddress, fromAddress, toAddress])
 }
@@ -83,7 +85,7 @@ model CoinTransaferTx {
   status      TransactionStatus @default(PENDING)
   fromAddress String            @db.VarChar(255)
   toAddress   String            @db.VarChar(255)
-  timestamp   BigInt
+  timestamp   DateTime
   gasPrice    BigInt            @default(0)
   gas         BigInt            @default(0)
   value       String            @default("0")
@@ -99,9 +101,10 @@ model Contracts {
   address      String         @unique
   blockHash    String         @db.VarChar(255)
   blockNumber  BigInt
-  bytecode     String         @default("")
+  bytecode     String         @default("") @db.VarChar(65535)
+  bytecodeHash String         @default("") @db.VarChar(255)
   txHash       String
-  timestamp    BigInt
+  timestamp    DateTime
   contractName String
   contractType String         @default("UNKNOWN")
   createdAt    DateTime       @default(now())
@@ -109,6 +112,8 @@ model Contracts {
   Tokens       Tokens?
   Holders      Holders[]
   ContractLogs ContractLogs[]
+  // ContractVerification ContractVerification? @relation(fields: [address], references: [contractAddress])
+  ContractVerification ContractVerification? 
 }
 
 model Tokens {
@@ -130,7 +135,7 @@ model Tokens {
 
 model Holders {
   id              Int    @id @default(autoincrement())
-  address         String 
+  address         String
   contractAddress String
   tokenBalance    String
 
@@ -149,7 +154,7 @@ model ContractLogs {
   method          String   @default("N/A")
   gasFee          BigInt
   status          String
-  timestamp       BigInt
+  timestamp       DateTime
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -184,7 +189,7 @@ model Validator {
   name           String   @default("")
   address        String   @unique
   status         String   @default("")
-  votingPower    Float   @default(0)
+  votingPower    Float    @default(0)
   selfStake      String   @default("")
   commission     String   @default("")
   delegatorCount Int
@@ -194,9 +199,21 @@ model Validator {
   @@index([selfStake, createdAt, updatedAt])
 }
 
+
+model DecodedLogs {
+  id              Int              @id @default(autoincrement())
+  txHash          String           @unique
+  contractAddress String
+  input           String           @default("")
+  logs            String           @default("")
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
 model ContractVerification {
   id                      Int          @id @default(autoincrement())  
   contractAddress         String       @unique
+  implementation          String       @default("")
   sourceCode              Json         @default("[]")
   codeformat              String
   contractname            String       @default("")
@@ -206,22 +223,16 @@ model ContractVerification {
   verificationType        Int          @default(0) //0:pending,1:partial,2:fully ,-1:rejected
   runs                    Int          @default(200)
   licenseType             Int          @default(0)
-  constructorArguements   String       @default("")
+  constructorArguements   Json         @default("[]")
   creationCode            String       @default("")
   byteCode                String       @default("")
   abi                     Json         @default("[]")
   abis                    Json         @default("[]")
   errors                  Json         @default("[]")
+  iconUrl                 String       @default("")
   createdAt               DateTime     @default(now())
   updatedAt               DateTime     @updatedAt
-}
+  Contracts              Contracts @relation(fields: [contractAddress], references: [address])
 
-model DecodedLogs {
-  id              Int      @id @default(autoincrement())
-  txHash          String   @unique
-  contractAddress String
-  input           String   @default("")
-  logs            String   @default("")
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  // Contracts Contracts[]
 }
