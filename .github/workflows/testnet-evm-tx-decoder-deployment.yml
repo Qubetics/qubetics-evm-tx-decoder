@@ -1,4 +1,4 @@
-name: '[testnet] Deploy explorer frontend'
+name: '[testnet] Deploy evm tx decoder'
 
 on: 
   push:
@@ -6,15 +6,15 @@ on:
       - testnet
 
 jobs:
-  testnet_deploy_explorer_frontend:
-    uses: ./.github/workflows/testnet-frontend.yaml
+  deploy_evm_tx_decoder:
+    uses: ./.github/workflows/testnet-evm-tx-decoder.yml
     with:
       SWR_ORGANIZATION: testnet-qubetics
       ARGOCD_BRANCH: testnet
       HUAWEI_REGION: 'ap-southeast-3'
       ARGOCD_REPOSITORY: Qubetics/argocd-qubetics
-      DEPLOYMENT_PATH: Frontend/deployment.yaml
-      HUAWEI_IMAGE: testnet-explorer-frontend
+      DEPLOYMENT_PATH: Evm-tx-decoder/tx-decoder-deployment.yaml
+      HUAWEI_IMAGE: testnet-evm-tx-decoder
       DOCKER_USERNAME: ap-southeast-3@BQG9INQF0BKVHSNQOLJG
       ENV: ${{ vars.TEST_ENV }}
     secrets:
