@@ -39,7 +39,7 @@ async function serverListening(): Promise<void> {
 
 async function closeClientConnections() {
 	await rabbitMqService.close();
-	await redisService.close();
+	// await redisService.close();
 	await databaseService.close();
 }
 
