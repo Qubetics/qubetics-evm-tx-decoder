@@ -1,17 +1,26 @@
-FROM node:18-alpine
-# ENV NODE_ENV production
+# Build Stage
+FROM node:20.11-alpine AS build
 WORKDIR /usr/src/app
-COPY --chown=node:node . /usr/src/app
-RUN mkdir -p ./logs
-RUN chown node ./logs
-RUN apk add --no-cache --virtual .build-deps alpine-sdk python3 
-RUN apk add --no-cache openssl
-RUN npm install   --ignore-scripts
-RUN npm run generate:prisma
-# RUN npm i nodemon -g
 
-RUN apk del .build-deps
+COPY . .
+
+RUN npm install typescript
 RUN npm run build:prod
-USER node
-EXPOSE 7200 
+
+# Final Stage
+FROM node:20.11-alpine AS final
+
+WORKDIR /usr/src/app
+
+COPY --from=build /usr/src/app/build .
+COPY --from=build /usr/src/app/prisma .
+COPY package*.json ./
+
+# install clean deps omit the dev deps and also ignore the
+# scripts from running while installing deps
+RUN npm ci --omit=dev --ignore-scripts
+RUN npm run generate:prisma
+
+EXPOSE 7900
+
 CMD ["npm", "run", "start:prod"]

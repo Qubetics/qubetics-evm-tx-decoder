@@ -34,7 +34,8 @@ export class ContractTxLogsDecoder {
 			rabbitmqService.ackMessage(message);
 			if (decodingLogs.error) throw decodingLogs.error;
 		} catch (err: any) {
-			console.log('errorr oldTxnConsumer', err);
+			console.log('errorr', err);
+			// rabbitmqService.ackMessage(message);
 			logger.error(ERROR_MESSAGES.TRANSACTIONS_LOGS);
 			logger.error(err.message);
 		}
@@ -44,15 +45,16 @@ export class ContractTxLogsDecoder {
 		if (!message) return;
 		try {
 			const data = JSON.parse(message.content.toString('utf-8'));
+
 			const decodingLogs = await this.decodeTransaction(data.txHash);
-			console.log('Decoding new log', decodingLogs);
+			console.log('Decoding new logs', decodingLogs);
 
 			rabbitmqService.ackMessage(message);
 			if (decodingLogs.error) throw decodingLogs.error;
-		} catch (err: any) {
-			console.log('errorr newTxnConsumer', err);
+		} catch (err) {
 			logger.error(ERROR_MESSAGES.DECODING_TRANSACTION);
-			logger.error(err.message);
+			// rabbitmqService.ackMessage(message);
+			console.log(err);
 		}
 	};
 
@@ -91,6 +93,7 @@ export class ContractTxLogsDecoder {
 						contractAddress,
 					},
 				});
+			console.log('details', contractDetails);
 
 			if (!contractDetails || !contractDetails.abi)
 				return new ReturnedResponse(ERROR_MESSAGES.ABI_NOT_FOUND, null);
@@ -127,31 +130,28 @@ export class ContractTxLogsDecoder {
 								: '';
 						} catch (err) {
 							console.log('Error in decodedTransactions');
-							const abis = JSON.parse(contractDetails.abis);
-							for (const abi of abis) {
-								if (!decodedLogs.length) {
-									abiDecoder.addABI(abi);
-									decodedLogs = contractTx.ContractLogs[0]
-										? abiDecoder.decodeLogs(
-												JSON.parse(
-													contractTx.ContractLogs[0]
-														.logs,
-												),
-											)
-										: '';
-								}
-							}
-							contractTxDecoded.push({
-								txHash: contractTx.txhash,
-								contractAddress,
-								input: JSON.stringify(decodedInput),
-								logs: JSON.stringify(decodedLogs),
-							});
 						}
+						if (!decodedLogs.length && contractDetails.abis) {
+							console.log('abis', contractDetails.abis);
+							abiDecoder.addABI(JSON.parse(contractDetails.abis));
+							decodedLogs = contractTx.ContractLogs[0]
+								? abiDecoder.decodeLogs(
+										JSON.parse(
+											contractTx.ContractLogs[0].logs,
+										),
+									)
+								: '';
+						}
+
+						contractTxDecoded.push({
+							txHash: contractTx.txhash,
+							contractAddress,
+							input: JSON.stringify(decodedInput),
+							logs: JSON.stringify(decodedLogs),
+						});
 					});
 					await dbService.prisma.decodedLogs.createMany({
 						data: contractTxDecoded,
-						skipDuplicates: true,
 					});
 				}
 			}
@@ -205,30 +205,25 @@ export class ContractTxLogsDecoder {
 					: '';
 			} catch (err) {
 				console.log('Error in decodedTransaction');
-				const abis = JSON.parse(contractDetails.abis);
-				for (const abi of abis) {
-					if (!decodedLogs.length) {
-						abiDecoder.addABI(abi);
-						decodedLogs = contractTxRecord.ContractLogs[0]
-							? abiDecoder.decodeLogs(
-									JSON.parse(
-										contractTxRecord.ContractLogs[0].logs,
-									),
-								)
-							: '';
-					}
-				}
-
-				await dbService.prisma.decodedLogs.createMany({
-					data: {
-						txHash: contractTxRecord.txhash,
-						contractAddress: contractTxRecord.toAddress,
-						input: JSON.stringify(decodedInput),
-						logs: JSON.stringify(decodedLogs),
-					},
-					skipDuplicates: true,
-				});
 			}
+
+			if (!decodedLogs.length) {
+				abiDecoder.addABI(JSON.parse(contractDetails.abis));
+				decodedLogs = contractTxRecord.ContractLogs[0]
+					? abiDecoder.decodeLogs(
+							JSON.parse(contractTxRecord.ContractLogs[0].logs),
+						)
+					: '';
+			}
+
+			await dbService.prisma.decodedLogs.createMany({
+				data: {
+					txHash: contractTxRecord.txhash,
+					contractAddress: contractTxRecord.toAddress,
+					input: JSON.stringify(decodedInput),
+					logs: JSON.stringify(decodedLogs),
+				},
+			});
 			return new ReturnedResponse('', true);
 		} catch (err) {
 			return new ReturnedResponse(
