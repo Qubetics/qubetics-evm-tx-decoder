@@ -7,7 +7,7 @@ on:
 
 jobs:
   deploy_evm_tx_decoder:
-    uses: ./.github/workflows/qubetics-evm-tx-decoder.yaml
+    uses: ./.github/workflows/testnet-evm-tx-decoder-service.yaml
     with:
       SWR_ORGANIZATION: testnet-qubetics
       ARGOCD_BRANCH: testnet_v2
