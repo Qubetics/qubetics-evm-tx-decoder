@@ -15,7 +15,7 @@ jobs:
       ARGOCD_REPOSITORY: Qubetics/argocd-qubetics
       DEPLOYMENT_PATH: Evm-tx-decoder/qubetics-tx-decoder-deployment.yaml
       HUAWEI_IMAGE: testnet-evm-tx-decoder
-      DOCKER_USERNAME: ap-southeast-3@BHPUAJWWFSLCMD312AZSR
+      DOCKER_USERNAME: ap-southeast-3@HPUAJWWFSLCMD312AZSR
       ENV: ${{ vars.TESTNET_V2_EVM_TX_DECODER_ENV }}
     secrets:
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD_NEW }}
